@@ -5,7 +5,24 @@ const cheerio = require('cheerio');
 const url = "https://www.sketch.com/extensions/plugins/";
 
 const StrapiClient = require('strapi-client')
-const strapi = new StrapiClient('http://strapi.bappy.tech/')
+//const strapi = new StrapiClient('http://strapi.bappy.tech/')
+const strapi = new StrapiClient('http://localhost:1337/')
+
+
+
+
+const createOrUpdate = async (table, data) => {
+	let { link, tool } = data;
+	let exists = await strapi.get(table, { link, tool });
+	if(exists.length) {
+		console.log("Updating..." , exists);
+		return await strapi.update(table, exists[0].id);
+	} else {
+		console.log("Inserting...");
+		return await strapi.create(table, data);
+	}
+};
+
 
 
 fetchData(url).then( (res) => {
@@ -17,13 +34,14 @@ fetchData(url).then( (res) => {
         let description = $(this).find('.card-description').text();
         let link = $(this).attr("href");
 
-	const plug = await strapi.create('plugins', {
+	const plug = await createOrUpdate('plugins', {
 		name,
 		link,
-		description
+		description,
+		tool : 'sketch'
 	});
 
-        console.log(name, description, link);
+        //console.log(name, description, link, plug);
     });
 })
 
