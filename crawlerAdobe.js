@@ -10,7 +10,7 @@ const FormData = require('form-data');
 
 const axios = require('axios');
 const cheerio = require('cheerio');
-const url = "https://www.sketch.com/extensions/plugins/";
+const url = "https://www.adobe.com/products/xd/resources.html";
 
 const StrapiClient = require('strapi-client')
 const strapi = new StrapiClient(BASE_URL);
@@ -68,33 +68,19 @@ const uploadFile = async(file, table, id) => {
 }
 
 async function process($, Tool) {
-    let name = $(this).find('.card-title').contents().first().text().trim();
-    let author = $(this).find('.card-title small').contents().get(1).data.trim();
-    let description = $(this).find('.card-description').text().trim();
-    let link = $(this).attr("href").trim();
-	let stars = 0;
-	let image;
-	if(link.includes("github.")) {
-		let gitpage = await fetchData(link);
-		//fs.writeFile("page.html", gitpage.data, (err) => console.log(err));
-		const $git = cheerio.load(gitpage.data);
-		stars = $git($git(".pagehead-actions li a.social-count").get(1)).contents().first().text().trim();
-		let tempimg = $git("#readme img").first().attr("src");
+	let det = $(this).children().eq(2);
+    let name = det.children().eq(0).text().trim();
+    let author = det.children().eq(1).text().trim().substring(3);
+    let description = det.children().eq(2).first().text().trim();
+    let link = det.children().eq(3).find('a').first().attr('href').trim();
+	let image = "http://adobe.com" + $(this).children().eq(0).find('img').first().attr('src').trim();
 
-		if (tempimg) {
-			console.log("Image Found:",tempimg);
-			image = tempimg;
-			//image = await downloadFile(tempimg);
-		}
-		
-	}
 
 	const plug = await createOrUpdate('plugins', {
 		name,
 		link,
 		description,
 		author,
-		stars,
 		tools: [Tool.id]
 	});
 	console.log(Tool.id);
@@ -105,11 +91,11 @@ async function process($, Tool) {
 	}
 
 	// console.log("Entry:", plug);
-//       console.log(name);
-//       console.log(author);
-	// console.log(description);
-	// console.log(link);
-	// console.log("stars:",stars);
+    console.log('n',name);
+    console.log('a',author);
+	console.log('d',description);
+	console.log('l',link);
+	console.log("i",image);
 }
 const sleep = ms =>
 new Promise(res => {
@@ -117,10 +103,10 @@ setTimeout(res, ms)
 })
 fetchData(url).then(async (res) => {
 
-	const Tool = (await strapi.get('tools', {name: 'Sketch'}))[0];
+	const Tool = (await strapi.get('tools', {name: 'AdobeXD'}))[0];
     const html = res.data;
     const $ = cheerio.load(html);
-    const statsTable = $('.wrapper .row li.col a');
+    const statsTable = $('div.grid-span-1of3');
     const arr = statsTable.map((i, elem) => elem);
     let A = [];
     for(var i in arr) {
@@ -129,7 +115,7 @@ fetchData(url).then(async (res) => {
     console.log(A);
     A.reduce(
 	  (p, x) =>
-	    p.then(_ => sleep(500).then(s => process.bind(x)($, Tool))),
+	    p.then(_ => sleep(1000).then(s => process.bind(x)($, Tool))),
 	  Promise.resolve()
 	)
 })
