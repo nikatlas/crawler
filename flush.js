@@ -5,8 +5,8 @@ const cheerio = require('cheerio');
 const url = "https://www.sketch.com/extensions/plugins/";
 
 const StrapiClient = require('strapi-client')
-//const strapi = new StrapiClient('http://strapi.bappy.tech/')
-const strapi = new StrapiClient('http://localhost:1337/')
+const strapi = new StrapiClient('http://strapi.bappy.tech/')
+//const strapi = new StrapiClient('http://localhost:1337/')
 
 
 
