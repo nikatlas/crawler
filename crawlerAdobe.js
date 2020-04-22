@@ -1,7 +1,7 @@
 // main.js
 
-// const BASE_URL = 'http://localhost:1337';
-const BASE_URL = 'http://strapi.bappy.tech/';
+const BASE_URL = 'http://localhost:1337';
+// const BASE_URL = 'http://strapi.bappy.tech/';
 const fs = require('fs');
 const https = require('https');
 const request = require('request');
