@@ -106,15 +106,21 @@ fetchData(url).then(async (res) => {
     for(var i in arr) {
     	A.push(arr[i]);
     }
+    let number = 0;
     // console.log(A);
+
+    const counter = A.length;
     A.reduce(
 	  (p, x) =>
 	    p.then(_ => sleep(100).then(s => process.bind(x)($, Tool))).catch(e => {
 	    	Errors.push(x)
+	    	console.log("Error Number: " + Errors.length);
 	    	console.log(e);
-	    }),
+	    }).then(() => console.log("Number: " , ++number)),
 	  Promise.resolve()
-	)
+	).then(() => {
+		console.log("Out of ", counter, " items");
+	})
 })
 
 async function fetchData(url){
