@@ -119,6 +119,7 @@ fetchData(url).then(async (res) => {
 	    }).then(() => console.log("Number: " , ++number)),
 	  Promise.resolve()
 	).then(() => {
+		console.log("There were ", Errors.length, " errors");
 		console.log("Out of ", counter, " items");
 	})
 })
