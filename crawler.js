@@ -145,7 +145,7 @@ fetchData(url).then(async (res) => {
     console.log(A);
     A.reduce(
 	  (p, x) =>
-	    p.then(_ => sleep(1000).then(s => process.bind(x)($, Tool))),
+	    p.then(_ => sleep(100).then(s => process.bind(x)($, Tool))),
 	  Promise.resolve()
 	)
 })
