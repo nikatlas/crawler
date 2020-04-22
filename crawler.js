@@ -113,7 +113,7 @@ async function process($, Tool) {
 		tools: [Tool.id]
 	});
 
-	console.log(Tool.id);
+	// console.log(Tool.id);
 
 	if (image) {
 		//upload Image
@@ -144,6 +144,7 @@ fetchData(url).then(async (res) => {
     }
     // console.log(A.length);
     const counter = A.length;
+    let number = 0;
     A.reduce(
 	  (p, x) =>
 	    p.then(_ => sleep(10).then(s => process.bind(x)($, Tool))).catch(e => {
