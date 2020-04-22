@@ -16,17 +16,23 @@ const StrapiClient = require('strapi-client')
 const strapi = new StrapiClient(BASE_URL);
 
 
+let Errors = [];
 
-const createOrUpdate = async (table, data) => {
-	let { name } = data;
-	let exists = await strapi.get(table, { name });
+const createOrUpdate = async (table, data, comparator = { name: data.name }) => {
+	let exists = await strapi.get(table, comparator);
 	if(exists.length) {
-		console.log("Updating...");
-		let newTools = [...new Set([...exists[0].tools, ...data.tools])];
-		let newdata = { ...data, tools: newTools};
+		console.log("Updating...", table);
+		let newdata = data;
+		if(table=="plugins"){
+			let newTools = [...new Set([...exists[0].tools, ...data.tools])];
+			let newLinks = [...new Set([...exists[0].links, ...data.links])];
+			let newDescription = (exists[0].description && data.description 
+				&& exists[0].description.length > data.description.length) ? exists[0].description : data.description;
+			newdata = { ...data, tools: newTools, description: newDescription, links: newLinks };
+		}
 		return await strapi.update(table, exists[0].id, newdata);
 	} else {
-		console.log("Inserting...");
+		console.log("Inserting...", table);
 		return await strapi.create(table, data);
 	}
 };
@@ -69,13 +75,13 @@ const uploadFile = async(file, table, id) => {
 
 async function process($, Tool) {
     let name = $(this).find('.card-title').contents().first().text().trim();
-    let author = $(this).find('.card-title small').contents().get(1).data.trim();
+    let author_name = $(this).find('.card-title small').contents().get(1).data.trim();
     let description = $(this).find('.card-description').text().trim();
-    let link = $(this).attr("href").trim();
+    let link_url = $(this).attr("href").trim();
 	let stars = 0;
 	let image;
-	if(link.includes("github.")) {
-		let gitpage = await fetchData(link);
+	if(link_url.includes("github.")) {
+		let gitpage = await fetchData(link_url);
 		//fs.writeFile("page.html", gitpage.data, (err) => console.log(err));
 		const $git = cheerio.load(gitpage.data);
 		stars = $git($git(".pagehead-actions li a.social-count").get(1)).contents().first().text().trim();
@@ -89,14 +95,24 @@ async function process($, Tool) {
 		
 	}
 
+	const author = await createOrUpdate('authors', {
+		name: author_name
+	});
+
+	const link = await createOrUpdate('links', {
+		tool: Tool.id,
+		link: link_url
+	}, {tool : Tool.id, link: link_url});
+
 	const plug = await createOrUpdate('plugins', {
 		name,
-		link,
+		links: [link.id],
 		description,
-		author,
+		author: author.id,
 		stars,
 		tools: [Tool.id]
 	});
+
 	console.log(Tool.id);
 
 	if (image) {
@@ -129,7 +145,7 @@ fetchData(url).then(async (res) => {
     console.log(A);
     A.reduce(
 	  (p, x) =>
-	    p.then(_ => sleep(500).then(s => process.bind(x)($, Tool))),
+	    p.then(_ => sleep(1000).then(s => process.bind(x)($, Tool))),
 	  Promise.resolve()
 	)
 })

@@ -1,6 +1,6 @@
 // main.js
 
-//const BASE_URL = 'http://localhost:1337';
+// const BASE_URL = 'http://localhost:1337';
 const BASE_URL = 'http://strapi.bappy.tech/';
 const fs = require('fs');
 const https = require('https');
@@ -16,34 +16,27 @@ const StrapiClient = require('strapi-client')
 const strapi = new StrapiClient(BASE_URL);
 
 
+let Errors = [];
 
-const createOrUpdate = async (table, data) => {
-	let { name } = data;
-	let exists = await strapi.get(table, { name });
+const createOrUpdate = async (table, data, comparator = { name: data.name }) => {
+	let exists = await strapi.get(table, comparator);
 	if(exists.length) {
-		console.log("Updating...");
-		let newTools = [...new Set([...exists[0].tools, ...data.tools])];
-		let newdata = { ...data, tools: newTools};
+		console.log("Updating...", table);
+		let newdata = data;
+		if(table=="plugins"){
+			let newTools = [...new Set([...exists[0].tools, ...data.tools])];
+			let newLinks = [...new Set([...exists[0].links, ...data.links])];
+			let newDescription = (exists[0].description && data.description 
+				&& exists[0].description.length > data.description.length) ? exists[0].description : data.description;
+			newdata = { ...data, tools: newTools, description: newDescription, links: newLinks };
+		}
 		return await strapi.update(table, exists[0].id, newdata);
 	} else {
-		console.log("Inserting...");
+		console.log("Inserting...", table);
 		return await strapi.create(table, data);
 	}
 };
-
-const downloadFile = async(file) => {
-	const filename = file.substring(file.lastIndexOf('/')+1);
-	const tempfile = fs.createWriteStream("temp/"+filename);
-	console.log("Donwloading file");
-	
-	// maybe this needs request-promise
-	await rp(file).pipe(tempfile);
-
-	console.log("Download complete");
-	return filename;
-
-}
-const uploadFile = async(file, table, id) => {
+const uploadFile = async(file, table, id, field = "images") => {
 	console.log("Uploading");
 	if(!file.includes("http")) {
 		file = "https://github.com" + file;
@@ -59,7 +52,7 @@ const uploadFile = async(file, table, id) => {
 		},
 		refId: id,
 		ref: table,
-		field: "images"
+		field
 	};
 	let req = request.post({ url:BASE_URL + '/upload', formData});
 	await req;
@@ -70,32 +63,33 @@ const uploadFile = async(file, table, id) => {
 async function process($, Tool) {
 	let det = $(this).children().eq(2);
     let name = det.children().eq(0).text().trim();
-    let author = det.children().eq(1).text().trim().substring(3);
-    let description = det.children().eq(2).first().text().trim();
-    let link = det.children().eq(3).find('a').first().attr('href').trim();
+    let author_name = det.children().eq(1).text().trim().substring(3);
+    let short_description = det.children().eq(2).first().text().trim();
+    let link_url = det.children().eq(3).find('a').first().attr('href').trim();
 	let image = "http://adobe.com" + $(this).children().eq(0).find('img').first().attr('src').trim();
 
+	const author = await createOrUpdate('authors', {
+		name: author_name
+	});
+
+	const link = await createOrUpdate('links', {
+		tool: Tool.id,
+		link: link_url
+	}, {tool : Tool.id, link: link_url});
 
 	const plug = await createOrUpdate('plugins', {
 		name,
-		link,
-		description,
-		author,
+		links: [link.id],
+		short_description,
+		author: author.id,
 		tools: [Tool.id]
 	});
 	console.log(Tool.id);
 
 	if (image) {
 		//upload Image
-		await uploadFile(image, 'plugins', plug.id);
+		await uploadFile(image, 'plugins', plug.id, "icon");
 	}
-
-	// console.log("Entry:", plug);
-    console.log('n',name);
-    console.log('a',author);
-	console.log('d',description);
-	console.log('l',link);
-	console.log("i",image);
 }
 const sleep = ms =>
 new Promise(res => {
@@ -112,10 +106,13 @@ fetchData(url).then(async (res) => {
     for(var i in arr) {
     	A.push(arr[i]);
     }
-    console.log(A);
+    // console.log(A);
     A.reduce(
 	  (p, x) =>
-	    p.then(_ => sleep(1000).then(s => process.bind(x)($, Tool))),
+	    p.then(_ => sleep(1000).then(s => process.bind(x)($, Tool))).catch(e => {
+	    	Errors.push(x)
+	    	console.log(e);
+	    }),
 	  Promise.resolve()
 	)
 })
