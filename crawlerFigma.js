@@ -1,7 +1,7 @@
 // main.js
 
-const BASE_URL = 'http://localhost:1337';
-//const BASE_URL = 'http://strapi.bappy.tech/';
+//const BASE_URL = 'http://localhost:1337';
+const BASE_URL = 'http://strapi.bappy.tech/';
 const fs = require('fs');
 const request = require('request');
 const axios = require('axios');
@@ -29,14 +29,13 @@ const createOrUpdate = async (table, data, comparator = { name: data.name }) => 
         return await strapi.create(table, data);
     }
 };
-
 const uploadFile = async(file, table, id, field = 'images') => {
 	console.log("Uploading");
 	if(!file.includes("http")) {
 		file = "http://" + file;
     }
-    console.log(file)
 	let filename = file.substring(file.lastIndexOf('/')+1,file.indexOf('?') > -1 ? file.indexOf('?') : undefined);
+    console.log(filename);
 	let formData = {
 		// files: [fs.createReadStream("temp/" + file.substring(file.lastIndexOf('/')+1))],
 		files: {
@@ -80,7 +79,9 @@ async function process(data) {
             author: author.id,
             tools: entry.tools
         });
-        
+        if(entry.authorImage) {
+            await uploadFile(entry.authorImage, 'authors', author.id);
+        }
         if (media[i].image) {
             await uploadFile(media[i].image, 'plugins', plug.id);
         }
@@ -113,12 +114,13 @@ function parseData(data, Tool) {
             name: item.versions[Object.keys(item.versions)[0]].name,
             description: item.versions[Object.keys(item.versions)[0]].description,
             author: item.creator.handle,
+            authorImage: item.creator.img_url,
             link: getLink(item.id, item.versions[Object.keys(item.versions)[0].name]),
             stars: item.like_count,
             tools: [Tool.id],
             media: {
                 image: `${figmaUrl}${item.versions[Object.keys(item.versions)[0]].redirect_cover_image_url}`,
-                icon: `${figmaUrl}${item.versions[Object.keys(item.versions)[0]].redorect_icon_url}`,
+                icon: `${figmaUrl}${item.versions[Object.keys(item.versions)[0]].redirect_icon_url}`,
             }
         }
     })
@@ -127,5 +129,5 @@ function parseData(data, Tool) {
 fetchData(url).then(async (data) => {
     const Tool = (await strapi.get('tools', {name: 'Figma'}))[0];
     let result = parseData(data.meta, Tool)
-    process(result)
+    await process(result);
 })
