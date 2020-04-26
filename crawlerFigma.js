@@ -80,7 +80,7 @@ async function process(data) {
             tools: entry.tools
         });
         if(entry.authorImage) {
-            await uploadFile(entry.authorImage, 'authors', author.id);
+            await uploadFile(entry.authorImage, 'authors', author.id, 'icon');
         }
         if (media[i].image) {
             await uploadFile(media[i].image, 'plugins', plug.id);
