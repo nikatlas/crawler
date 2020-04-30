@@ -115,7 +115,7 @@ function parseData(data, Tool) {
             description: item.versions[Object.keys(item.versions)[0]].description,
             author: item.creator.handle,
             authorImage: item.creator.img_url,
-            link: getLink(item.id, item.versions[Object.keys(item.versions)[0].name]),
+            link: getLink(item.id, item.versions[Object.keys(item.versions)[0]].name),
             stars: item.like_count,
             tools: [Tool.id],
             media: {

@@ -1,7 +1,7 @@
 // main.js
 
-const BASE_URL = 'http://localhost:1337';
-// const BASE_URL = 'http://strapi.bappy.tech/';
+//const BASE_URL = 'http://localhost:1337';
+const BASE_URL = 'http://strapi.bappy.tech/';
 const fs = require('fs');
 const https = require('https');
 const request = require('request');
@@ -84,7 +84,7 @@ async function process($, Tool) {
 		author: author.id,
 		tools: [Tool.id]
 	});
-	console.log(Tool.id);
+	console.log(Tool.id, plug.id);
 
 	if (image) {
 		//upload Image
@@ -112,7 +112,7 @@ fetchData(url).then(async (res) => {
     const counter = A.length;
     A.reduce(
 	  (p, x) =>
-	    p.then(_ => sleep(100).then(s => process.bind(x)($, Tool))).catch(e => {
+	    p.then(_ => sleep(10).then(s => process.bind(x)($, Tool))).catch(e => {
 	    	Errors.push(x)
 	    	console.log("Error Number: " + Errors.length);
 	    	console.log(e);
