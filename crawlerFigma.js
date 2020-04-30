@@ -75,7 +75,7 @@ async function process(data) {
         const plug = await createOrUpdate('plugins', {
             name: entry.name,
             links: [link.id],
-            short_description: entry.description,
+            description: entry.description,
             author: author.id,
             tools: entry.tools
         });
