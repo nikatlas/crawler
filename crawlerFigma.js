@@ -1,9 +1,9 @@
 // main.js
 
 //const BASE_URL = 'http://localhost:1337';
-const BASE_URL = 'http://strapi.bappy.tech/';
+const BASE_URL = 'http://strapi.bappy.tech';
 const fs = require('fs');
-const request = require('request');
+const request = require('request-promise');
 const axios = require('axios');
 const url = "https://www.figma.com/api/plugins/browse";
 const figmaUrl = "https://figma.com"
@@ -55,9 +55,14 @@ const uploadFile = async(file, table, id, field = 'images') => {
 		ref: table,
 		field: field
 	};
-	let req = request.post({ url:BASE_URL + '/upload', formData});
-	await req;
-	console.log("Uploaded");
+
+	let req;
+    try {
+        req = await request.post({ url:BASE_URL + '/upload', formData});
+    } catch(e) {
+        console.log("Error" , e);
+    }
+	console.log("Uploaded", BASE_URL + "/upload", file);
 	return req;
 }
 
