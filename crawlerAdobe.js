@@ -18,6 +18,7 @@ const strapi = new StrapiClient(BASE_URL);
 
 let Errors = [];
 
+let insertCounter = 0;
 const createOrUpdate = async (table, data, comparator = { name: data.name }) => {
 	let exists = await strapi.get(table, comparator);
 	if(exists.length) {
@@ -32,8 +33,13 @@ const createOrUpdate = async (table, data, comparator = { name: data.name }) => 
 		}
 		return await strapi.update(table, exists[0].id, newdata);
 	} else {
-		console.log("Inserting...", table);
-		return await strapi.create(table, data);
+        if(table === "plugins") {
+            insertCounter++;
+            console.log("Need to insert this one...", table);
+        } else {
+            console.log("Inserting ", table);
+            return await strapi.create(table, data);
+        }
 	}
 };
 const uploadFile = async(file, table, id, field = "images") => {
@@ -86,10 +92,10 @@ async function process($, Tool) {
 	});
 	console.log(Tool.id, plug.id);
 
-	if (image) {
-		//upload Image
-		await uploadFile(image, 'plugins', plug.id, "icon");
-	}
+	// if (image) {
+	// 	//upload Image
+	// 	await uploadFile(image, 'plugins', plug.id, "icon");
+	// }
 }
 const sleep = ms =>
 new Promise(res => {
@@ -121,6 +127,7 @@ fetchData(url).then(async (res) => {
 	).then(() => {
 		console.log("There were ", Errors.length, " errors");
 		console.log("Out of ", counter, " items");
+		console.log("insertCounter ", insertCounter, " items");
 	})
 })
 

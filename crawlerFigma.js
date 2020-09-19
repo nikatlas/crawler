@@ -5,12 +5,14 @@ const BASE_URL = 'http://strapi.bappy.tech/';
 const fs = require('fs');
 const request = require('request');
 const axios = require('axios');
-const url = "https://www.figma.com/api/plugins/top";
-const figmaUrl = "figma.com"
+const url = "https://www.figma.com/api/plugins/browse";
+const figmaUrl = "https://figma.com"
+// https://www.figma.com/api/plugins/browse?sort_by=installs&tag=&user_id=717321891961427131&sort_order=desc&resource_type=plugins&page_size=25
 
-const StrapiClient = require('strapi-client')
+const StrapiClient = require('strapi-client');
 const strapi = new StrapiClient(BASE_URL);
 
+let insertCounter = 0;
 const createOrUpdate = async (table, data, comparator = { name: data.name }) => {
     let exists = await strapi.get(table, comparator);
     if(exists.length) {
@@ -25,8 +27,13 @@ const createOrUpdate = async (table, data, comparator = { name: data.name }) => 
         }
         return await strapi.update(table, exists[0].id, newdata);
     } else {
-        console.log("Inserting...", table);
-        return await strapi.create(table, data);
+        if(table === "plugins") {
+            insertCounter++;
+            console.log("Need to insert this one...", table);
+        } else {
+            console.log("Inserting ", table);
+            return await strapi.create(table, data);
+        }
     }
 };
 const uploadFile = async(file, table, id, field = 'images') => {
@@ -79,13 +86,14 @@ async function process(data) {
             author: author.id,
             tools: entry.tools
         });
-        if(entry.authorImage) {
+        // Insert Images
+        if(entry.authorImage && author && author.id) {
             await uploadFile(entry.authorImage, 'authors', author.id, 'icon');
         }
-        if (media[i].image) {
+        if (media[i].image && plug && plug.id) {
             await uploadFile(media[i].image, 'plugins', plug.id);
         }
-        else if(media[i].icon) {
+        else if(media[i].icon && plug && plug.id) {
             await uploadFile(media[i].icon, 'plugins', plug.id, 'icon');
         }
     
@@ -126,8 +134,19 @@ function parseData(data, Tool) {
     })
 }
 
-fetchData(url).then(async (data) => {
+const nextPage = async (u) => {
+    let data = await fetchData(u);
     const Tool = (await strapi.get('tools', {name: 'Figma'}))[0];
-    let result = parseData(data.meta, Tool)
+    let result = parseData(data.meta.plugins, Tool)
     await process(result);
-})
+    console.log("InsertCounter: ", insertCounter);
+    if(data.pagination.next_page)
+        return nextPage(data.pagination.next_page);
+}
+
+const run = async () => {
+    console.log("Starting...");
+    await nextPage(url);
+    console.log("Finished...");
+}
+run();
